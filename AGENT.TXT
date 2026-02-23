@@ -272,4 +272,14 @@ Notes/TODO:
 - Implement edges (draw, connect, select) on canvas.
 - Implement Text mode (place/edit text in nodes or as text nodes).
 - Add selection highlight, multi-select, and box select.
-- Add fit-to-view and keyboard shortcuts.
+|- Add fit-to-view and keyboard shortcuts.
+
+Change Log
+[2026-02-23 10:00 UTC] Hermes - 404 Page Beautification : Added floating particles, glitchy 404 number, animated SVG paths, and a smooth back-home button with hover effects.
+Files: frontend/src/pages/notfound.tsx, AGENT.TXT
+
+[2026-02-23 12:00 UTC] Hermes - Landing Page Redesign : Replaced placeholder text with proper feature cards (Task Management, Structure Board, Team Insights), a welcome heading, and a "Get Started" call-to-action button.
+Files: frontend/src/pages/landing.tsx, frontend/src/App.tsx, AGENT.TXT
+
+[2026-02-23 14:00 UTC] Hermes - Home Page Enhancement : Added navigation quick-links grid below the ASCII banner with icons and descriptions for Calendar, Structure Board, Team, Dashboard, and Submissions pages.
+Files: frontend/src/pages/home.tsx, AGENT.TXT
