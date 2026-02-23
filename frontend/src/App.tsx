@@ -12,6 +12,7 @@ import TeamPage from "@/pages/team";
 import Settings from "@/pages/Settings";
 import SubmissionsManagement from "@/pages/submissions-management";
 import Structure from "@/pages/structure";
+import Landing from "@/pages/landing";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
@@ -54,6 +55,7 @@ function AppContent() {
               <Route path="/settings" element={<RequireValidated><Settings /></RequireValidated>} />
               <Route path="/submissions" element={<RequireRole roles={["Leader", "Mod"]}><SubmissionsManagement /></RequireRole>} />
               <Route path="/structure" element={<RequireValidated><Structure /></RequireValidated>} />
+              <Route path="/landing" element={<Landing />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
