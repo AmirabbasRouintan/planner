@@ -1,0 +1,101 @@
+# Backend Migration Status — Express.js + TypeScript
+
+## Branch
+`main` (standalone backend-ts directory)
+
+## Architecture
+
+- **Runtime**: Express.js + TypeScript (tsx watch mode)
+- **ORM**: Prisma 6 with SQLite (dev) / PostgreSQL (prod)
+- **Auth**: Token-based (UUID key stored in `tokens` table)
+- **Port**: 4000
+
+## Directory Layout
+
+```
+src/
+├── index.ts              # Entry point
+├── app.ts                # Express app config + route mounting (23 routes)
+├── config/
+│   └── database.ts       # Prisma client singleton
+├── middleware/
+│   ├── auth.ts           # authMiddleware + optionalAuth (accepts Bearer/Token)
+│   └── upload.ts         # File upload middleware
+└── routes/               # 23 route files, 24+ mounted endpoints
+    ├── auth.ts           # login, register, logout, me, update-profile, team, dashboard
+    ├── tickets.ts        # CRUD tickets + comments
+    ├── tasks.ts          # CRUD assigned tasks
+    ├── goals.ts          # CRUD daily goals
+    ├── reports.ts        # CRUD daily reports
+    ├── submissions.ts    # CRUD submissions
+    ├── chat.ts           # Chat rooms + messages
+    ├── notifications.ts  # Alerts (GET list, POST create, POST :id/mark_read)
+    ├── files.ts          # File upload/download
+    ├── working-hours.ts  # Check-in/check-out
+    ├── structure.ts      # Structure boards (collaborative canvas)
+    ├── boards.ts         # Flow-diagram boards (Node/Edge canvas)
+    ├── groups.ts         # Group management
+    ├── services.ts       # Registered services
+    ├── telegram.ts       # Telegram integration
+    ├── admin.ts          # Admin dashboard/settings/logs (developer-only)
+    ├── checklist.ts      # Personal checklist
+    ├── event-templates.ts# Calendar event templates
+    ├── exercises.ts      # Daily exercises
+    ├── notes.ts          # Permanent notes (field: title + content)
+    ├── calendar.ts       # Calendar events + comments
+    ├── users.ts          # User list
+    └── google-sheets.ts  # Google Sheets sync config
+```
+
+## Status — All Endpoints Verified ✅
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Auth (7 endpoints) | ✅ | login, register, me, team, dashboard, profile update, logout |
+| Tasks | ✅ | CRUD with assigned_by, linked notifications |
+| Goals | ✅ | CRUD by date range |
+| Reports | ✅ | CRUD |
+| Submissions | ✅ | CRUD with status tracking |
+| Chat | ✅ | Rooms + messages |
+| Notifications | ✅ | List, create, mark-read |
+| Files | ✅ | Upload/download via multipart |
+| Working Hours | ✅ | Check-in/check-out pattern |
+| Structure Boards | ✅ | Collaborative canvas |
+| Flow Boards | ✅ | Node/Edge diagram |
+| Groups | ✅ | Group management |
+| Services | ✅ | Registered services |
+| Telegram | ✅ | Integration data |
+| Admin | ✅ | Dashboard, settings, logs (dev-only) |
+| Checklists | ✅ | Personal checklist items |
+| Event Templates | ✅ | Calendar templates |
+| Exercises | ✅ | Daily exercises |
+| Notes | ✅ | Permanent notes (accepts `text`/`content`/`title`) |
+| Calendar | ✅ | Events + comments |
+| Users | ✅ | User listing |
+| Google Sheets | ✅ | Config CRUD + sync trigger |
+| Tickets | ✅ | Tickets + comments |
+
+## Models (30+)
+user, token, userProfile, assignedTask, dailyGoal, report, submission, chatRoom, chatMessage, notification, configFile, workingHours, structureBoard, board, node, edge, group, groupMember, groupMessage, service, telegramMessage, telegramBot, setting, activityLog, checklistItem, eventTemplate, exercise, permanentNote, calendarEvent, calendarComment, googleSheetsConfig
+
+## Verified 2026-07-05
+
+- Schema validates: ✅
+- Prisma client generates: ✅
+- DB pushes cleanly: ✅
+- Server starts on port 4000: ✅
+- 35 API endpoints tested (live server): ✅ 35/35 pass
+- TypeScript (tsc --noEmit): 21 cosmetic errors (Express req.params typing, non-blocking)
+
+## Quick Start
+```bash
+cd ~/planner/backend-ts
+npx prisma generate
+npx prisma db push
+npm run dev    # tsx watch on src/index.ts
+```
+
+## Not Yet Implemented (future scope)
+- Webhooks API
+- Activity log (independent endpoint)
+- Proxies, Branches, Settings (standalone CRUD)

@@ -1,0 +1,552 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
+  teamRole  String   @default("None") @map("team_role")
+  telegramId String? @map("telegram_id")
+  developer Boolean  @default(false)
+  isValidate Boolean @default(false) @map("is_validate")
+  canSeeWorkHours Boolean @default(false) @map("can_see_work_hours")
+  bio       String?
+  lastSeen  DateTime? @map("last_seen")
+  profilePicture String? @map("profile_picture")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  profile         UserProfile?
+  authToken       Token?
+  telegram        Telegram?
+  ownedBoards     StructureBoard[]     @relation("BoardOwner")
+  sharedBoards    StructureBoard[]     @relation("BoardCollaborators")
+  sentMessages    ChatMessage[]        @relation("MessageSender")
+  notifications   Notification[]
+  ownedGroups     Group[]              @relation("GroupOwner")
+  groupMemberships GroupMembership[]
+  chatRoomsAsUser1 ChatRoom[]          @relation("ChatRoomUser1")
+  chatRoomsAsUser2 ChatRoom[]          @relation("ChatRoomUser2")
+  groupChatRooms  ChatRoom[]           @relation("GroupChatRoomMembers")
+
+  // Content
+  permanentNotes  PermanentNote[]
+  checklistItems  ChecklistItem[]
+  dailyGoals      DailyGoal[]
+  eventTemplates  EventTemplate[]
+  exercises       Exercise[]
+  reports         Report[]             @relation("ReportUser")
+  submissions     Submission[]
+  assignedTasks   AssignedTask[]       @relation("AssignedTaskUser")
+  assignedTasksCreated AssignedTask[]  @relation("AssignedTaskCreator")
+  employeeTodos   EmployeeTodo[]
+  workingHours    WorkingHours[]
+  tickets         Ticket[]
+  ticketComments  TicketComment[]
+  configFiles     ConfigFile[]         @relation("ConfigFileUploader")
+  receivedFiles   ConfigFile[]         @relation("ConfigFileRecipient")
+  savedMessages   SavedMessage[]
+  comments        Comment[]
+  calendarEvents  CalendarEvent[]
+  activityLogs    ActivityLog[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profilePicture  String?  @map("profile_picture")
+  isV2rayAdmin    Boolean  @default(false) @map("is_v2ray_admin")
+  hasV2rayAccess  Boolean  @default(true) @map("has_v2ray_access")
+  dailyEventsJson String?  @map("daily_events_json")
+  notepadContent  String?  @map("notepad_content")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("user_profiles")
+}
+
+model Token {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  userId    Int      @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("tokens")
+}
+
+model Ticket {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String
+  description String
+  status      String   @default("pending")
+  comments    TicketComment[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("tickets")
+}
+
+model TicketComment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int      @map("ticket_id")
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("ticket_comments")
+}
+
+model ConfigFile {
+  id          Int      @id @default(autoincrement())
+  name        String
+  file        String
+  uploadedBy  Int      @map("uploaded_by")
+  uploader    User     @relation("ConfigFileUploader", fields: [uploadedBy], references: [id], onDelete: Cascade)
+  recipientId Int?     @map("recipient_id")
+  recipient   User?    @relation("ConfigFileRecipient", fields: [recipientId], references: [id])
+  isPublic    Boolean  @default(false) @map("is_public")
+  targetRole  String?  @map("target_role")
+  uploadedAt  DateTime @default(now()) @map("uploaded_at")
+
+  @@map("config_files")
+}
+
+model V2RayConfig {
+  id        Int      @id @default(autoincrement())
+  title     String
+  text      String
+  status    String   @default("off")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("v2ray_configs")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  eventId   Int      @map("event_id")
+  event     CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("comments")
+}
+
+model CalendarEvent {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime
+  startTime   String?  @map("start_time")
+  endTime     String?  @map("end_time")
+  task        String   @default("")
+  description String?
+  status      String   @default("pending")
+  color       String   @default("#3B82F6")
+  isHoliday   Boolean  @default(false) @map("is_holiday")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  comments    Comment[]
+
+  @@map("calendar_events")
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  details   String?
+  timestamp DateTime @default(now())
+
+  @@map("activity_logs")
+}
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+model Telegram {
+  id                       Int      @id @default(autoincrement())
+  userId                   Int      @unique @map("user_id")
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isActive                 Boolean  @default(false) @map("is_active")
+  botName                  String?  @map("bot_name")
+  apiToken                 String?  @map("api_token")
+  sendLog                  Boolean  @default(false) @map("send_log")
+  sendReport               Boolean  @default(false) @map("send_report")
+  sendTasks                Boolean  @default(false) @map("send_tasks")
+  sendDollarPrice          Boolean  @default(false) @map("send_dollar_price")
+  sendGoldPrice            Boolean  @default(false) @map("send_gold_price")
+  sendReports              Boolean  @default(false) @map("send_reports")
+  sendTeam                 Boolean  @default(false) @map("send_team")
+  sendSubmissions          Boolean  @default(false) @map("send_submissions")
+  sendTaskNotifications    Boolean  @default(true) @map("send_task_notifications")
+  dollarPriceCmd           String   @default("/dollar") @map("dollar_price_cmd")
+  goldPriceCmd             String   @default("/gold") @map("gold_price_cmd")
+  saeDataEnabled           Boolean  @default(false) @map("sae_data_enabled")
+  saeAutomationInterval    Int      @default(5) @map("sae_automation_interval")
+  googleSheetsAutoSyncEnabled Boolean @default(false) @map("google_sheets_auto_sync_enabled")
+  googleSheetsSyncInterval Int      @default(10) @map("google_sheets_sync_interval")
+  botStatus                String   @default("idle") @map("bot_status")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  @@map("telegram_bots")
+}
+
+model PermanentNote {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String   @default("")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("permanent_notes")
+}
+
+model ChecklistItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("checklist_items")
+}
+
+model AssignedTask {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation("AssignedTaskUser", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy  Int      @map("assigned_by")
+  assigner    User     @relation("AssignedTaskCreator", fields: [assignedBy], references: [id])
+  title       String?
+  text        String
+  done        Boolean  @default(false)
+  date        DateTime
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("assigned_tasks")
+}
+
+model EmployeeTodo {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  done      Boolean  @default(false)
+  date      DateTime
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("employee_todos")
+}
+
+model DailyGoal {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text       String
+  completed  Boolean  @default(false)
+  date       DateTime
+  priority   String   @default("medium")
+  category   String   @default("personal")
+  color      String   @default("blue")
+  notes      String   @default("")
+  targetTime Int?     @map("target_time")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, date, text])
+  @@map("daily_goals")
+}
+
+model EventTemplate {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  title       String
+  startTime   String?  @map("start_time")
+  endTime     String?  @map("end_time")
+  task        String?
+  description String?
+  color       String   @default("blue")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("event_templates")
+}
+
+model Exercise {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("exercises")
+}
+
+model Report {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation("ReportUser", fields: [userId], references: [id], onDelete: Cascade)
+  tasks       String
+  note        String?
+  noteType    String   @default("text") @map("note_type")
+  status      String   @default("pending")
+  rating      Int?
+  submittedAt DateTime @default(now()) @map("submitted_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  images      ReportImage[]
+
+  @@map("reports")
+}
+
+model ReportImage {
+  id         Int      @id @default(autoincrement())
+  reportId   Int      @map("report_id")
+  report     Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  image      String
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  @@map("report_images")
+}
+
+model Submission {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  report    String
+  rating    Int?
+  status    String   @default("pending")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("submissions")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  link      String?
+  isRead    Boolean  @default(false) @map("is_read")
+  isSaved   Boolean  @default(false) @map("is_saved")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+model ChatRoom {
+  id        Int      @id @default(autoincrement())
+  user1Id   Int?     @map("user1_id")
+  user1     User?    @relation("ChatRoomUser1", fields: [user1Id], references: [id])
+  user2Id   Int?     @map("user2_id")
+  user2     User?    @relation("ChatRoomUser2", fields: [user2Id], references: [id])
+  isGroup   Boolean  @default(false) @map("is_group")
+  name      String?
+  slug      String?  @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  messages  ChatMessage[]
+  members   User[]   @relation("GroupChatRoomMembers")
+
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  chatRoomId Int     @map("chat_room_id")
+  chatRoom  ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  senderId  Int      @map("sender_id")
+  sender    User     @relation("MessageSender", fields: [senderId], references: [id])
+  message   String?
+  image     String?
+  isSaved   Boolean  @default(false) @map("is_saved")
+  timestamp DateTime @default(now())
+
+  savedBy   SavedMessage[]
+
+  @@map("chat_messages")
+}
+
+model SavedMessage {
+  userId    Int        @map("user_id")
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageId Int        @map("message_id")
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@id([userId, messageId])
+  @@map("saved_messages")
+}
+
+model WorkingHours {
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @map("user_id")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date                DateTime
+  morningCheckIn      DateTime? @map("morning_check_in")
+  morningCheckOut     DateTime? @map("morning_check_out")
+  morningStatus       String   @default("absent") @map("morning_status")
+  morningPartialTime  String?  @map("morning_partial_time")
+  afternoonCheckIn    DateTime? @map("afternoon_check_in")
+  afternoonCheckOut   DateTime? @map("afternoon_check_out")
+  afternoonStatus     String   @default("absent") @map("afternoon_status")
+  afternoonPartialTime String? @map("afternoon_partial_time")
+  isCurrentlyWorking  Boolean  @default(false) @map("is_currently_working")
+  currentShift        String?  @map("current_shift")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, date])
+  @@map("working_hours")
+}
+
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  ownerId     Int      @map("owner_id")
+  owner       User     @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  inviteCode  String   @unique @map("invite_code")
+  status      String   @default("pending")
+  isPublic    Boolean  @default(false) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  memberships GroupMembership[]
+
+  @@map("groups")
+}
+
+model GroupMembership {
+  id       Int      @id @default(autoincrement())
+  userId   Int      @map("user_id")
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId  Int      @map("group_id")
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  role     String   @default("member")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  @@unique([userId, groupId])
+  @@map("group_memberships")
+}
+
+model StructureBoard {
+  id            Int      @id @default(autoincrement())
+  code          String   @unique
+  name          String   @default("New Board")
+  ownerId       Int      @map("owner_id")
+  owner         User     @relation("BoardOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  data          String   @default("{\"nodes\":[],\"edges\":[]}")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  collaborators User[]   @relation("BoardCollaborators")
+
+  @@map("structure_boards")
+}
+
+model Board {
+  id        String   @id @default(uuid())
+  name      String   @default("New Board")
+  ownerId   Int      @map("owner_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  nodes Node[]
+  edges Edge[]
+
+  @@map("boards")
+}
+
+model Node {
+  id            String
+  boardId       String  @map("board_id")
+  board         Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  type          String
+  positionX     Float   @map("position_x")
+  positionY     Float   @map("position_y")
+  data          String  @default("{}")
+  style         String  @default("{}")
+  measuredWidth Float?  @map("measured_width")
+  measuredHeight Float? @map("measured_height")
+  selected      Boolean @default(false)
+  dragging      Boolean @default(false)
+
+  @@id([boardId, id])
+  @@map("nodes")
+}
+
+model Edge {
+  id           String
+  boardId      String  @map("board_id")
+  board        Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  source       String
+  target       String
+  sourceHandle String? @map("source_handle")
+  targetHandle String? @map("target_handle")
+  animated     Boolean @default(false)
+  style        String  @default("{}")
+  type         String  @default("default")
+
+  @@id([boardId, id])
+  @@map("edges")
+}
+
+model Service {
+  id        Int      @id @default(autoincrement())
+  name      String
+  url       String
+  status    String   @default("unknown")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("services")
+}
+
+model GoogleSheetsConfig {
+  id             Int      @id @default(autoincrement())
+  spreadsheetId  String?
+  sheetName      String   @default("Sheet1")
+  syncEnabled    Boolean  @default(false)
+  lastSyncedAt   DateTime?
+
+  @@map("google_sheets_configs")
+}
